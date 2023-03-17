@@ -37,12 +37,16 @@ export default async function Table() {
         <thead>
       <tr>
         <th></th> 
-        <th>Name</th> 
-        <th>Job</th> 
-        <th>company</th> 
-        <th>location</th> 
-        <th>Last Login</th> 
-        <th>Favorite Color</th>
+        <th>Payment Ref</th> 
+        <th>Payment Type</th> 
+        <th>Payment Description</th> 
+        <th>Procedure Amount</th> 
+        <th>Payment Discount</th> 
+        <th>Amount Paid</th>
+        <th>Discount RefNo</th> 
+        <th>Discount GivenBy</th> 
+        <th>Username</th> 
+        <th>Created At</th>
       </tr>
     </thead> 
     <Columns/>
