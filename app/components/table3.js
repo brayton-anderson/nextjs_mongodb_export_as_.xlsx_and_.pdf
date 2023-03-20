@@ -6,7 +6,7 @@ import { useReactToPrint } from "react-to-print";
 
 const inter = Inter({ subsets: ['latin'] })
 
-export default function Table({children}) {
+export default function Table3({children}) {
   const tableRef = useRef(null);
   const conponentPDF = useRef(null);
 
@@ -36,21 +36,14 @@ export default function Table({children}) {
         <button className="btn btn-outline btn-success px-2" onClick={ generatePDF}>Generate PDF</button> 
         </div >
         <div ref={conponentPDF}>
-        <h1 className="text-lg font-bold py-2">Transactions</h1>
+        <h1 className="text-lg font-bold py-2">Daily Payments</h1>
         <table ref={tableRef}  className="table table-compact w-full py-2">
         <thead>
       <tr>
         <th></th> 
-        <th>Payment Ref</th> 
+        <th>Date</th> 
+        <th>Total Paid</th> 
         <th>Payment Type</th> 
-        <th>Payment Description</th> 
-        <th>Procedure Amount</th> 
-        <th>Payment Discount</th> 
-        <th>Amount Paid</th>
-        <th>Discount RefNo</th> 
-        <th>Discount GivenBy</th> 
-        <th>Username</th> 
-        <th>Created At</th>
       </tr>
     </thead> 
     {children}

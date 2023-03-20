@@ -14,15 +14,6 @@ export default async function Columns() {
   const payments = await fetchPayments()
   return (
     <tbody>
-        <th>Payment Type</th> 
-        <th>Payment Description</th> 
-        <th>Procedure Amount</th> 
-        <th>Payment Discount</th> 
-        <th>Amount Paid</th>
-        <th>Discount RefNo</th> 
-        <th>Discount GivenBy</th> 
-        <th>Username</th> 
-        <th>Created At</th>
     {payments.map( (payment, index) => (
       <tr key={payment._id}>
         <th>{index+1}</th> 
