@@ -4,12 +4,12 @@ import {
   getGroupedWeeklyPayments,
   getGroupedMonthlyPayments,
   getGroupedYearlyPayments,
-  getGroupedDailyPayments
+  getGroupedDailyPayments,
 } from "@/app/lib/mongos/payments";
 import Table from "./components/table";
 import Table2 from "./components/table2";
 import Table3 from "./components/table3";
-import moment from "moment";
+import XLSX from "xlsx";
 import styles from "./page.module.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -166,9 +166,9 @@ export async function Columns() {
           <td>{payment.paymentReferenceCode}</td>
           <td>{payment.paymentType}</td>
           <td>{payment.paymentDescription}</td>
-          <td>{currency +" "+ payment.procedureAmount}</td>
+          <td>{currency + " " + payment.procedureAmount}</td>
           <td>{payment.paymentDiscount}</td>
-          <td>{currency +" "+ payment.AmountPaid}</td>
+          <td>{currency + " " + payment.AmountPaid}</td>
           <td>{payment.discountRefNo}</td>
           <td>{payment.discountGivenBy}</td>
           <td>{payment.username}</td>
@@ -189,7 +189,7 @@ export async function Columns3() {
         <tr key={dpayment._id}>
           <th>{index + 1}</th>
           <td>{formatDate(new Date(dpayment._id.date))}</td>
-          <td>{currency +" "+ dpayment.total_cost_day}</td>
+          <td>{currency + " " + dpayment.total_cost_day}</td>
           <td>{dpayment.type}</td>
         </tr>
       ))}
@@ -197,21 +197,120 @@ export async function Columns3() {
   );
 }
 
+const downloadDailyExcel = async () => {
+  const dailypayments = await fetchGroupedDailyPayments();
+  const currency = "Ksh";
+  const newData = dailypayments.map((dpayment, index) => {
+    const data = [
+      {
+        id: index + 1,
+        date: formatDate(new Date(dpayment._id.date)),
+        total: currency + " " + dpayment.total_cost_day,
+        type: dpayment.type,
+      },
+    ];
+
+    return data;
+  });
+  const workSheet = XLSX.utils.json_to_sheet(newData);
+  const workBook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workBook, workSheet, "daily_payments");
+  //Buffer
+  let buf = XLSX.write(workBook, { bookType: "xlsx", type: "buffer" });
+  //Binary string
+  XLSX.write(workBook, { bookType: "xlsx", type: "binary" });
+  //Download
+  XLSX.writeFile(workBook, "Daily_Payments_Data.xlsx");
+};
+
+const downloadYearlyExcel = async () => {
+  const groupedYearlyPayments = await fetchGroupedYearlyPaymentss();
+  const groupedMonthlyPayments = await fetchGroupedMonthlyPayments();
+  const groupedWeeklyPayments = await fetchGroupedWeeklyPayments();
+  const currency = "Ksh";
+  const newData = groupedYearlyPayments.map((grpayment) => {
+    if (grpayment._id.year == formatYear(new Date(grpayment.dayfirst))) {
+      groupedMonthlyPayments.map((grpaymentmonth) => {
+        if (
+          grpayment._id.year == formatYear(new Date(grpaymentmonth.dayfirst))
+        ) {
+          groupedWeeklyPayments.map((grpaymentweek, index) => {
+            if (
+              formatYear(new Date(grpaymentweek.dayfirst)) ==
+                grpayment._id.year &&
+              formatMonths() ==
+                formatMonthsVerify(`${grpaymentmonth._id.month - 1}`)
+            ) {
+              const data = [
+                {
+                  id: index + 1,
+                  year: grpayment._id.year,
+                  month_no: grpaymentmonth._id.month,
+                  week: grpaymentweek._id.week,
+                  month: formatMonthsVerify(`${grpaymentmonth._id.month - 1}`),
+                  payment_type: grpaymentweek.type,
+                  totalperweek: currency + " " + grpaymentweek.total_cost_week,
+                  totalpermonth:
+                    currency + " " + grpaymentmonth.total_cost_month,
+                  totalperyear: currency + " " + grpayment.total_cost_year,
+                },
+              ];
+
+              console.log(data);
+
+              return data;
+            }
+          });
+        }
+      });
+    }
+  });
+  const workSheet = XLSX.utils.json_to_sheet(newData);
+  const workBook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workBook, workSheet, "yearly_payments");
+  //Buffer
+  let buf = XLSX.write(workBook, { bookType: "xlsx", type: "buffer" });
+  //Binary string
+  XLSX.write(workBook, { bookType: "xlsx", type: "binary" });
+  //Download
+  XLSX.writeFile(workBook, "Yearly_Payments_Data.xlsx");
+};
+
+export async function Button1() {
+  return (
+    <button
+      className="btn btn-outline btn-accent px-2"
+      onClick={await downloadYearlyExcel()}
+    >
+      {" "}
+      Export excel{" "}
+    </button>
+  );
+}
+
+export async function Button2() {
+  return (
+    <button
+      className="btn btn-outline btn-accent px-2"
+      onClick={await downloadDailyExcel()}
+    >
+      {" "}
+      Export excel{" "}
+    </button>
+  );
+}
+
 export async function Columns2() {
   const groupedYearlyPayments = await fetchGroupedYearlyPaymentss();
   const groupedMonthlyPayments = await fetchGroupedMonthlyPayments();
   const groupedWeeklyPayments = await fetchGroupedWeeklyPayments();
+
   const currency = "Ksh";
   return (
     <div>
       <table className="table table-compact w-full">
         {groupedYearlyPayments.map((grpayment, index) => {
-          console.log("year= " + formatYear(new Date(grpayment.dayfirst)));
           if (grpayment._id.year == formatYear(new Date(grpayment.dayfirst))) {
-            const yearCost = grpayment.total_cost_year[index];
-            let lis = [];
-            lis.concat({ grpayment });
-            console.log("list" + lis);
             return (
               <>
                 <div className="py-2">
@@ -311,6 +410,35 @@ export async function Columns2() {
                                     }
                                   }
                                 )}
+                                </tr>
+                                <tr>
+                                <th>Payment Type</th>
+                                {groupedWeeklyPayments.map(
+                                  (grpaymentcostweek, index) => {
+                                    if (
+                                      formatYear(
+                                        new Date(grpaymentcostweek.dayfirst)
+                                      ) == grpayment._id.year &&
+                                      formatMonths(
+                                        new Date(grpaymentcostweek.dayfirst)
+                                      ) ==
+                                        formatMonthsVerify(
+                                          `${grpaymentmonth._id.month - 1}`
+                                        )
+                                    ) {
+                                      return (
+                                        <>
+                                          <td key={grpaymentcostweek}>
+                                            {grpaymentcostweek.type}
+                                          </td>
+                                          {/* <td>{formatDate(new Date(weeks[weekNum].dateCreated))} - {formatDate(new Date(weeks[weekNum].weekEnd))}</td> */}
+                                        </>
+                                      );
+                                    } else {
+                                      return null;
+                                    }
+                                  }
+                                )}
                               </tr>
                               <tr className="w-full">
                                 <th className="capitalize">
@@ -326,7 +454,7 @@ export async function Columns2() {
                                     grpaymentmonth.total_cost_month +
                                     "  "}
                                 </td>
-                                </tr>
+                              </tr>
                               <tr>
                                 <th className="background-none bg-opacity-0"></th>
                               </tr>
@@ -369,9 +497,12 @@ export default async function Home() {
   return (
     <div className={styles.main}>
       <Table3>
+        {/* <Button2 /> */}
         <Columns3 />
       </Table3>
+
       <Table2>
+        {/* <Button1 /> */}
         <Columns2 />
       </Table2>
 

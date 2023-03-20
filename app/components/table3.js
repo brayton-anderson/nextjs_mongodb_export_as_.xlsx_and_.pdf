@@ -28,7 +28,6 @@ export default function Table3({children}) {
           currentTableRef={tableRef.current}
           className="py-2"
         >
-
           <button className="btn btn-outline btn-accent px-2"> Export excel </button>
 
         </DownloadTableExcel>
